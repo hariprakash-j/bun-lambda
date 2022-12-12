@@ -1,0 +1,82 @@
+#!/bin/sh
+set -euo pipefail
+
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+HANDLER_NAME=$(echo "$_HANDLER" | cut -d. -f2)
+HANDLER_FILE=$(echo "$_HANDLER" | cut -d. -f1)
+
+PATH=$SCRIPT_DIR/bin:$PATH
+
+API_ROOT=http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/
+
+echo "
+import { $HANDLER_NAME as handle } from '$LAMBDA_TASK_ROOT/$HANDLER_FILE';
+const INVOCATION = '${API_ROOT}invocation/';
+let requestId;
+while (true) {
+  const next = await fetch(INVOCATION + 'next');
+  const headers = next.headers;
+  requestId = headers.get('lambda-runtime-aws-request-id');
+  const context = {
+    functionName: '$AWS_LAMBDA_FUNCTION_NAME',
+    functionVersion: '$AWS_LAMBDA_FUNCTION_VERSION',
+    invokedFunctionArn: headers.get('lambda-runtime-invoked-function-arn'),
+    memoryLimitInMB: '$AWS_LAMBDA_FUNCTION_MEMORY_SIZE',
+    awsRequestId: requestId,
+    logGroupName: '$AWS_LAMBDA_LOG_GROUP_NAME',
+    logStreamName: '$AWS_LAMBDA_LOG_STREAM_NAME',
+    identity: '',
+    clientContext: '',
+    getRemainingTimeInMillis: function() {
+      return Number(headers.get('lambda-runtime-deadline-ms')) - Date.now();
+    },
+    // NOTE: we add these for type compatibility with Definitely Typed.
+    callbackWaitsForEmptyEventLoop: undefined,
+    done: undefined,
+    fail: undefined,
+    succeed: undefined
+  }
+  let res;
+  try {
+    const event = await next.json();
+    const body = await handle(event, context);
+    res = await fetch(INVOCATION + requestId + '/response', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+  } catch(e) {
+    console.error(e);
+    // If it's an Error we can pull these out cleanly...
+    // BUT it's javascript so it could be anything!
+    // If there's a better way, very happy to take suggestions.
+    let name, message;
+    try {
+      name = e.name || 'Error'
+    } catch (_) {
+      name = 'Error'
+    }
+    try {
+      message = e.message || e
+    } catch (_) {
+      message = e
+    }
+    if (typeof(name) !== 'string') {
+      name = JSON.stringify(name)
+    }
+    if (typeof(message) !== 'string') {
+      const s = JSON.stringify(message)
+      message = s === undefined ? '' + message : s
+    }
+    res = await fetch(INVOCATION + requestId + '/error', {
+      method: 'POST',
+      body: JSON.stringify({
+        errorMessage: message,
+        errorType: name
+      })
+    });
+  }
+  await res.blob();
+}
+" > /tmp/runtime.js
+
+bun run /tmp/runtime.js
