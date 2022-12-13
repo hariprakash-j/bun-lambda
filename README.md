@@ -1,6 +1,6 @@
 # bun on lambda
 
-A bun runtime for AWS Lambda.
+A bun runtime for AWS Lambda, create fast lambdas using bun runtime for javascript.
 An example lambda handler...
 
 ```js
@@ -12,6 +12,13 @@ export async handler(event, context) {
   }
 }
 ```
+
+## How to use
+
+- Download the release
+- create a lambda layer with runtime as `custom on amazon linux 2` and architecture as `x86_64` and upload the zip
+- attach the layer to a lambda created with custom runtime and upload your code
+- run the lambda and enjoy using bun on lambda
 
 ## How to build
 
