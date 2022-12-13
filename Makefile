@@ -34,3 +34,4 @@ package:
 clean:
 	rm -rf build
 	rm -rf .pytest_cache
+	rm -rf ./test_src/node_modules
