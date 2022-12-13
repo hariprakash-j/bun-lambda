@@ -1,7 +1,8 @@
 FROM public.ecr.aws/lambda/provided:al2
 
 # Copy custom runtime bootstrap
-COPY ./build/runtime/* ${LAMBDA_RUNTIME_DIR}/
+COPY ./build/runtime/bin/* ${LAMBDA_RUNTIME_DIR}/bin/
+COPY ./build/runtime/bootstrap ${LAMBDA_RUNTIME_DIR}
 
 # Copy function code
 COPY ./test_src/* ${LAMBDA_TASK_ROOT}/

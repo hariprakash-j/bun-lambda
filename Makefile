@@ -1,24 +1,34 @@
+BUN_VERSION = 0.3.0
+BUN_LINUX_X86_PACKAGE_NAME = bun-linux-x64-baseline
+BUN_BINARY_URL := https://github.com/oven-sh/bun/releases/download/bun-v$(BUN_VERSION)/$(BUN_LINUX_X86_PACKAGE_NAME).zip
+AL2_PACKAGE_NAME = bun-lambda-runtime-x86-al2
+TEST_IMAGE_NAME = test-bun-image
+TEST_IMAGE_TAG = latest
+TEST_CONTAINER_NAME = test-bun-container
+TEST_CONTAINER_EXTERNAL_PORT = 9000
+TEST_CONTAINER_INTERNAL_PORT = 8080
+
 all: build test package clean
 
 build:
 	mkdir build
-	wget https://github.com/oven-sh/bun/releases/download/bun-v0.3.0/bun-linux-x64-baseline.zip -O ./build/bun-baseline.zip
-	unzip ./build/bun-baseline.zip -d ./build
+	wget $(BUN_BINARY_URL) -O ./build/$(BUN_LINUX_X86_PACKAGE_NAME).zip
+	unzip ./build/$(BUN_LINUX_X86_PACKAGE_NAME).zip -d ./build
 	cp -r ./runtime ./build
-	mkdir -p ./build/runtime/opt/bin
-	mv ./build/bun*/bun ./build/runtime/opt/bin
-	
+	mkdir -p ./build/runtime/bin
+	mv ./build/bun*/bun ./build/runtime/bin
 
 test: build
-	sudo docker build -t test-container:latest .
-	sudo docker run -p 9000:8080 -d --name bun-test-lambda test-container:latest
-	pytest -qs test_runtime.py
-	sudo docker container kill bun-test-lambda
-	sudo docker container rm bun-test-lambda
+	sudo docker build -t $(TEST_IMAGE_NAME):$(TEST_IMAGE_TAG) .
+	sudo docker run -p $(TEST_CONTAINER_EXTERNAL_PORT):$(TEST_CONTAINER_INTERNAL_PORT) -d --name $(TEST_CONTAINER_NAME) $(TEST_IMAGE_NAME):$(TEST_IMAGE_TAG)
+	pytest -q test_runtime.py
+	sudo docker container kill $(TEST_CONTAINER_NAME)
+	sudo docker container rm $(TEST_CONTAINER_NAME)
 
 package:
-	cd ./build/runtime && zip -r bun-runtime *
-	mv ./build/runtime/bun-runtime.zip .
+	cd ./build/runtime && zip -r $(AL2_PACKAGE_NAME) *
+	mkdir package
+	mv ./build/runtime/$(AL2_PACKAGE_NAME).zip ./package
 
 clean:
 	rm -rf build
