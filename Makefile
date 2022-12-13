@@ -19,6 +19,7 @@ build:
 	mv ./build/bun*/bun ./build/runtime/bin
 
 test: build
+	cd ./test_src && yarn install
 	sudo docker build -t $(TEST_IMAGE_NAME):$(TEST_IMAGE_TAG) .
 	sudo docker run -p $(TEST_CONTAINER_EXTERNAL_PORT):$(TEST_CONTAINER_INTERNAL_PORT) -d --name $(TEST_CONTAINER_NAME) $(TEST_IMAGE_NAME):$(TEST_IMAGE_TAG)
 	pytest -q test_runtime.py
