@@ -1,4 +1,4 @@
-BUN_VERSION = 0.3.0
+BUN_VERSION = 0.5.1
 BUN_LINUX_X86_PACKAGE_NAME = bun-linux-x64-baseline
 BUN_BINARY_URL := https://github.com/oven-sh/bun/releases/download/bun-v$(BUN_VERSION)/$(BUN_LINUX_X86_PACKAGE_NAME).zip
 AL2_PACKAGE_NAME = bun-lambda-runtime-x86-al2
