@@ -8,7 +8,7 @@ TEST_CONTAINER_NAME = test-bun-container
 TEST_CONTAINER_EXTERNAL_PORT = 9000
 TEST_CONTAINER_INTERNAL_PORT = 8080
 
-all: build test package clean
+all: build test package
 
 build:
 	mkdir build
@@ -26,12 +26,17 @@ test: build
 	sudo docker container kill $(TEST_CONTAINER_NAME)
 	sudo docker container rm $(TEST_CONTAINER_NAME)
 
-package:
+package: build test
 	cd ./build/runtime && zip -r $(AL2_PACKAGE_NAME) *
+	cd ../../
 	mkdir package
 	mv ./build/runtime/$(AL2_PACKAGE_NAME).zip ./package
+	
 
 clean:
 	rm -rf build
 	rm -rf .pytest_cache
 	rm -rf ./test_src/node_modules
+
+clean_all: clean
+	rm -rf package
