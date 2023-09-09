@@ -1,7 +1,7 @@
 BUN_VERSION = 1.0.0
 BUN_LINUX_X86_PACKAGE_NAME = bun-linux-x64-baseline
 BUN_BINARY_URL := https://github.com/oven-sh/bun/releases/download/bun-v$(BUN_VERSION)/$(BUN_LINUX_X86_PACKAGE_NAME).zip
-AL2_PACKAGE_NAME = bun-lambda-runtime-x86-al2
+AL2_PACKAGE_NAME = bun-v$(BUN_VERSION)-lambda-runtime-x86-al2
 TEST_IMAGE_NAME = test-bun-image
 TEST_IMAGE_TAG = latest
 TEST_CONTAINER_NAME = test-bun-container
@@ -11,7 +11,7 @@ CONTAINER_RUNTIME = podman
 
 all: package
 
-build:
+build: clean
 	mkdir build
 	wget $(BUN_BINARY_URL) -O ./build/$(BUN_LINUX_X86_PACKAGE_NAME).zip
 	unzip ./build/$(BUN_LINUX_X86_PACKAGE_NAME).zip -d ./build
@@ -27,16 +27,14 @@ test: build
 	$(CONTAINER_RUNTIME) container kill $(TEST_CONTAINER_NAME)
 	$(CONTAINER_RUNTIME) container rm $(TEST_CONTAINER_NAME)
 
-package: clean_package build test
-	cd ./build/runtime && zip -r $(AL2_PACKAGE_NAME) *
+package: build test
+	rm -rf ./package/*.zip
+	cd ./build/runtime && zip -r $(AL2_PACKAGE_NAME).zip *
 	cd ../../
-	mkdir package
 	mv ./build/runtime/$(AL2_PACKAGE_NAME).zip ./package
 
 clean:
 	rm -rf build
 	rm -rf .pytest_cache
 	rm -rf ./test_src/node_modules
-
-clean_package:
-	rm -rf package
+	rm -rf ./__pycache__
