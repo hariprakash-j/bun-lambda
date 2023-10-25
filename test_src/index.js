@@ -1,4 +1,4 @@
-export async function handler(event, context) {
+export async function handler(event, _) {
   let output;
   if (event.data === "marco") {
     output = "polo";
